@@ -1,0 +1,37 @@
+Build a small full-stack app called "Pantry Tracker" as a pnpm workspace, the way Replit Agent normally structures artifacts.
+
+Structure:
+- artifacts/pantry-web: React + Vite + TypeScript + Tailwind frontend
+- artifacts/api-server: Express + TypeScript API, all routes under /api
+- lib/db: Drizzle ORM with Postgres
+
+Auth:
+- Use Clerk for sign up and sign in.
+- Roles: "admin" and "member". Store roles in a user_roles table (user_id, role). A new user gets "member" automatically on first visit through POST /api/me/role.
+- The server must check the Clerk session on every protected route. Admin routes must refuse members with a 403, and there must be no way to change your own role from the browser.
+
+Database tables (Drizzle, with real migrations, not an empty schema):
+- items: id (serial primary key), name (text), quantity (integer), expires_on (date), created_by (text), created_at (timestamp default now)
+- user_roles: user_id (text primary key), role (text)
+
+API routes:
+- GET /api/health returns { ok: true }
+- GET /api/me returns the signed-in user's id and role
+- POST /api/me/role gives the signed-in user the "member" role if they have none
+- GET /api/items lists the signed-in user's items
+- POST /api/items creates an item (validate the body, return 400 on bad input)
+- DELETE /api/items/:id deletes only the user's own item (404 if not theirs)
+- GET /api/admin/items lists every user's items (admin only)
+
+Frontend pages:
+- Home (public): short description and sign in / sign up buttons
+- /sign-in and /sign-up using Clerk components
+- /pantry (members): list items, add item form, delete button
+- /admin (admins only): all items table
+- /access-denied for signed-in users without the right role
+
+Rules:
+- No WebSockets, no file uploads, no external services like Stripe, Resend or OpenAI.
+- Read config only from environment variables. Do not hardcode keys.
+- Seed 5 example items for a demo user in a seed script.
+- Add a README listing the routes, tables and environment variable names.

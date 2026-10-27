@@ -1,0 +1,202 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: pantry
+    description: Pantry inventory and account operations
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Check API health
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /me:
+    get:
+      operationId: getMe
+      tags: [pantry]
+      summary: Get the signed-in user and role
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          description: Sign in required
+  /me/role:
+    post:
+      operationId: ensureMyRole
+      tags: [pantry]
+      summary: Assign the member role if none exists
+      responses:
+        "200":
+          description: Current user and role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          description: Sign in required
+  /items:
+    get:
+      operationId: listItems
+      tags: [pantry]
+      summary: List the signed-in user's pantry items
+      responses:
+        "200":
+          description: Pantry items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PantryItem"
+        "401":
+          description: Sign in required
+    post:
+      operationId: createItem
+      tags: [pantry]
+      summary: Add an item to the signed-in user's pantry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemInput"
+      responses:
+        "201":
+          description: Created pantry item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PantryItem"
+        "400":
+          description: Invalid item
+        "401":
+          description: Sign in required
+  /items/{id}:
+    delete:
+      operationId: deleteItem
+      tags: [pantry]
+      summary: Delete the signed-in user's item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          description: Invalid item id
+        "401":
+          description: Sign in required
+        "404":
+          description: Item not found
+  /admin/items:
+    get:
+      operationId: listAdminItems
+      tags: [pantry]
+      summary: List all items for administrators
+      responses:
+        "200":
+          description: All pantry items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PantryItem"
+        "401":
+          description: Sign in required
+        "403":
+          description: Admin role required
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Me:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+      required: [id, role]
+    PantryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: integer
+        expiresOn:
+          type: string
+          format: date
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, quantity, expiresOn, createdBy, createdAt]
+    ItemInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        quantity:
+          type: integer
+          minimum: 0
+        expiresOn:
+          type: string
+          format: date
+      required: [name, quantity, expiresOn]
+
